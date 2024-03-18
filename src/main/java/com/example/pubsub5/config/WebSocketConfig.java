@@ -7,7 +7,7 @@ import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
-import static com.example.pubsub5.PubSub5Application.NB_SOCKETS;
+import static com.example.pubsub5.PubSubApplication.NB_SOCKETS;
 
 @Configuration
 @EnableWebSocket

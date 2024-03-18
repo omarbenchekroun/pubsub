@@ -16,9 +16,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
 
-@ContextConfiguration(classes=PubSub5Application.class)
+@ContextConfiguration(classes= PubSubApplication.class)
 @SpringBootTest
-class PubSub5ApplicationTests {
+class PubSubApplicationTests {
+	static final int NB_THREADS = 8;
 	void post(String url, HashMap<String, Object> params){
 		RestTemplate restTemplate = new RestTemplate();
 		HttpHeaders headers = new HttpHeaders();
@@ -28,12 +29,11 @@ class PubSub5ApplicationTests {
 			builder = builder.queryParam(entry.getKey(), entry.getValue());
 		}
 		HttpEntity<?> entity = new HttpEntity<>(headers);
-		HttpEntity<String> response = restTemplate.exchange(
+		restTemplate.exchange(
 				builder.toUriString(),
 				HttpMethod.POST,
 				entity,
 				String.class);
-		//ignore response
 	}
 
 	class addAndSubscribe implements Callable<Boolean> {
@@ -43,7 +43,7 @@ class PubSub5ApplicationTests {
 		}
 		@Override
 		public Boolean call(){
-			post("http://localhost:8080/addUser", new HashMap<>(){{
+			post("http://localhost:8080/user", new HashMap<>(){{
 				put("userName", String.format("Sardukar%d", id));
 			}});
 			post("http://localhost:8080/subscribe", new HashMap<>(){{
@@ -69,20 +69,22 @@ class PubSub5ApplicationTests {
 		}
 	}
 	@Test
-	void Test1() throws InterruptedException {
-		post("http://localhost:8080/addTopic", new HashMap<>(){{
+	void SubscribersTest() throws InterruptedException {
+		final int NB_CONCURRENT_SUSCRIBERS = 500;
+
+		post("http://localhost:8080/topic", new HashMap<>(){{
 			put("topicName", "DUNE");
 		}});
-		post("http://localhost:8080/addUser", new HashMap<>(){{
+		post("http://localhost:8080/user", new HashMap<>(){{
 			put("userName", "Paul");
 		}});
 		post("http://localhost:8080/subscribe", new HashMap<>(){{
 			put("userName", "Paul");
 			put("topicName", "DUNE");
 		}});
-		ExecutorService executor = Executors.newFixedThreadPool(8);
+		ExecutorService executor = Executors.newFixedThreadPool(NB_THREADS);
 		Collection<Callable<Boolean>> a = new ArrayList<>();
-		for (int i = 0; i<500; i++){
+		for (int i = 0; i<NB_CONCURRENT_SUSCRIBERS; i++){
 			a.add(new addAndSubscribe(i));
 		}
 		executor.invokeAll(a);
@@ -94,10 +96,12 @@ class PubSub5ApplicationTests {
 	}
 
 	@Test
-	void Test2() throws InterruptedException {
-		ExecutorService executor = Executors.newFixedThreadPool(8);
+	void PublicationsTest() throws InterruptedException {
+		final int NB_CONCURRENT_PUBLICATIONS = 10000;
+
+		ExecutorService executor = Executors.newFixedThreadPool(NB_THREADS);
 		Collection<Callable<Boolean>> b = new ArrayList<>();
-		for (int i=0; i<10000; i++){
+		for (int i=0; i<NB_CONCURRENT_PUBLICATIONS; i++){
 			b.add(new publish(i));
 		}
 		executor.invokeAll(b);

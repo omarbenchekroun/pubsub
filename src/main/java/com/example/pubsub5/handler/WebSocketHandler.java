@@ -1,7 +1,7 @@
 package com.example.pubsub5.handler;
 
 
-import com.example.pubsub5.PubSub5Application;
+import com.example.pubsub5.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.socket.CloseStatus;
@@ -11,19 +11,19 @@ import org.springframework.web.socket.WebSocketSession;
 
 import lombok.extern.slf4j.Slf4j;
 
-import static com.example.pubsub5.PubSub5Application.*;
+import static com.example.pubsub5.PubSubApplication.*;
 
 @Slf4j
 public class WebSocketHandler implements org.springframework.web.socket.WebSocketHandler {
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+    public void afterConnectionEstablished(WebSocketSession session) {
         log.info("Connection established on session: {}", session.getId());
         String uri = session.getUri().toString();
         int userId = Integer.parseInt(uri.split("/")[uri.indexOf("/")]) ;
-        PubSub5Application.User user;
-        if (users.containsKey(userId)){
-            user = users.get(userId);
+        User user;
+        if (usersFromId.containsKey(userId)){
+            user = usersFromId.get(userId);
             user.currentSession = session;
         }else{
             throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE);
@@ -52,9 +52,9 @@ public class WebSocketHandler implements org.springframework.web.socket.WebSocke
         log.info("Connection closed on session: {} with status: {}", session.getId(), closeStatus.getCode());
         String uri = session.getUri().toString();
         int userId = Integer.parseInt(uri.split("/")[uri.indexOf("/")]) ;
-        PubSub5Application.User user;
-        if (users.containsKey(userId)){
-            user = users.get(userId);
+        User user;
+        if (usersFromId.containsKey(userId)){
+            user = usersFromId.get(userId);
             user.currentSession = null;
         }else{
             throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE);
